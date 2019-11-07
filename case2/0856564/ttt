@@ -1,0 +1,16 @@
+a.out
+bin
+makefile
+npshell
+npshell.dSYM
+server.cpp
+shell.h
+simple
+simple.cpp
+simple.dSYM
+test
+test.tt
+test_socket.cpp
+ttt
+user.h
+user_man.h
