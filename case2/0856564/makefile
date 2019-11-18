@@ -1,8 +1,0 @@
-all:
-	g++ -o np_simple -g np_simple.cpp
-	g++ -o np_single_proc -g np_single_proc.cpp
-	g++ -o np_multu_proc -g np_multu_proc.cpp
-clean:
-	rm np_simple
-	rm np_single_proc
-	rm np_multu_proc
