@@ -260,7 +260,7 @@ public:
 					close(p_in[0]);
 					close(p_in[1]);
 					int status;
-					waitpid((pid_t)pid, &status, 0);
+					if ( type != 4 ) waitpid((pid_t)pid, &status, 0);
 
 				}
 				break;
@@ -311,7 +311,7 @@ public:
 					//close(p_in[1]);
 					//close(p_in[0]);
 					int status;
-					waitpid((pid_t)pid, &status, 0);
+					if ( type != 4 && type != 6 ) waitpid((pid_t)pid, &status, 0);
 				}
 				break;
 		}

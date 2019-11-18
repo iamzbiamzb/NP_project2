@@ -251,30 +251,7 @@ public:
 			case 2 :
 				
 				if ( type == 3 ) fileno = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666,0);
-				if ( type == 4 ) {
-					//cout << p_out[0] << " " << p_out[1] << endl;
-					string ss(user_pipe_name(p_out[0],p_out[1]));
-					unlink(ss.c_str());
-					mkfifo(ss.c_str(),0666);
-
-					int shm_id;
-
-					piduserpipe* pid_pointer;
-					key_t key = 3005 ;
-					if ((shm_id = shmget( key , sizeof(struct piduserpipe), IPC_CREAT | 0666)) < 0) {
-				    	perror("shmget100");	
-					}
-					if ((pid_pointer = (piduserpipe*)shmat(shm_id, NULL, 0)) == (piduserpipe*) -1) {
-				    	perror("shmat");
-					}
-					(pid_pointer)->userpipev[p_out[1]] = p_out[0]; 
-					//cerr << (pid_pointer)->userpipev[p_out[1]] << " here";
-					//cerr << pidcross[p_out[1]] << " here2";
-					shmdt(pid_pointer);
-
-					kill(pidcross[p_out[1]],SIGUSR2);
-					fileno = open(ss.c_str(), O_WRONLY );
-				}
+				
 				while ( (pid = fork()) < 0 ) {
 					usleep(1000);
 				}
@@ -282,6 +259,24 @@ public:
 					dup2(threeFD[2], STDERR_FILENO);
 					if ( type == 3 ) dup2(fileno, STDOUT_FILENO);
 					else if ( type == 4 ) {
+						string ss(user_pipe_name(p_out[0],p_out[1]));
+						unlink(ss.c_str());
+						while ( mkfifo(ss.c_str(),0666) < 0 ) {
+							usleep(1000);
+						}
+						int shm_id;
+						piduserpipe* pid_pointer;
+						key_t key = 3005 ;
+						if ((shm_id = shmget( key , sizeof(struct piduserpipe), IPC_CREAT | 0666)) < 0) {
+					    	perror("shmget100");	
+						}
+						if ((pid_pointer = (piduserpipe*)shmat(shm_id, NULL, 0)) == (piduserpipe*) -1) {
+					    	perror("shmat");
+						}
+						(pid_pointer)->userpipev[p_out[1]] = p_out[0]; 
+						shmdt(pid_pointer);
+						kill(pidcross[p_out[1]],SIGUSR2);
+						fileno = open(ss.c_str(), O_WRONLY );
 						dup2(fileno,STDOUT_FILENO);
 					}else {
 						dup2(threeFD[1],STDOUT_FILENO);
@@ -300,52 +295,16 @@ public:
 					close(p_in[0]);
 					close(p_in[1]);
 					int status;
-					waitpid((pid_t)pid, &status, 0);
-					if ( type == 3 || type == 4 ) close(fileno);
+					if ( type != 4 ) waitpid((pid_t)pid, &status, 0);
+					if ( type == 3 ) close(fileno);
 				}
 				break;
 			case 3 :
 				//int fileno ; 
 				if ( type == 3 || type == 7 ) fileno = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666,0);
-				if ( type == 4 || type == 6 ) {
-					//cout << p_out[0] << " " << p_out[1] << endl;
-					string ss(user_pipe_name(p_out[0],p_out[1]));
-					unlink(ss.c_str());
-					if (mkfifo(ss.c_str(),0666) < 0) {
-						//cerr << "fifo" << endl;
-					}
-
-					int shm_id;
-
-					piduserpipe* pid_pointer;
-					key_t key = 3005 ;
-					if ((shm_id = shmget( key , sizeof(struct piduserpipe), IPC_CREAT | 0666)) < 0) {
-				    	perror("shmget100");	
-					}
-					if ((pid_pointer = (piduserpipe*)shmat(shm_id, NULL, 0)) == (piduserpipe*) -1) {
-				    	perror("shmat");
-					}
-					(pid_pointer)->userpipev[p_out[1]] = p_out[0]; 
-					
-
-					//cerr << (pid_pointer)->userpipev[p_out[1]] << " here";
-					//cerr << pidcross[p_out[1]] << " here2";
-
-					shmdt(pid_pointer);
-
-					kill(pidcross[p_out[1]],SIGUSR2);
-					//cerr << "wwww";
-					fileno = open(ss.c_str(), O_WRONLY );
-					//cerr << "wwww";
-				}
+				
 				if ( type == 5 || type == 6 || type == 7 ) {
-					//cout << p_in[0] << " " << p_in[1] << endl;
-					//string ss(user_pipe_name(p_in[0],p_in[1]));
-					//cerr << "qqqqq" << endl;
-					//fileno2 = open(ss.c_str(), O_RDONLY );
 					fileno2 = openfd[p_in[0]];
-					//cerr << fileno2 << endl;
-					//cerr << "qqqqq" << endl;
 				}
 				while ( (pid = fork()) < 0 ) {
 					//cerr << "fdsfs"  << endl;
@@ -356,10 +315,46 @@ public:
 					dup2(threeFD[2], STDERR_FILENO);
 					if ( type == 3 ) dup2(fileno, STDOUT_FILENO);
 					else if ( type == 4 ) {
+						string ss(user_pipe_name(p_out[0],p_out[1]));
+						unlink(ss.c_str());
+						if (mkfifo(ss.c_str(),0666) < 0) {
+							//cerr << "fifo" << endl;
+						}
+						int shm_id;
+						piduserpipe* pid_pointer;
+						key_t key = 3005 ;
+						if ((shm_id = shmget( key , sizeof(struct piduserpipe), IPC_CREAT | 0666)) < 0) {
+					    	perror("shmget100");	
+						}
+						if ((pid_pointer = (piduserpipe*)shmat(shm_id, NULL, 0)) == (piduserpipe*) -1) {
+					    	perror("shmat");
+						}
+						(pid_pointer)->userpipev[p_out[1]] = p_out[0]; 
+						shmdt(pid_pointer);
+						kill(pidcross[p_out[1]],SIGUSR2);
+						fileno = open(ss.c_str(), O_WRONLY );
 						dup2(fileno,STDOUT_FILENO);
 					} else if ( type == 5 ) {
 						dup2(fileno2,STDIN_FILENO);
 					} else if ( type == 6 ) {
+						string ss(user_pipe_name(p_out[0],p_out[1]));
+						unlink(ss.c_str());
+						if (mkfifo(ss.c_str(),0666) < 0) {
+							//cerr << "fifo" << endl;
+						}
+						int shm_id;
+						piduserpipe* pid_pointer;
+						key_t key = 3005 ;
+						if ((shm_id = shmget( key , sizeof(struct piduserpipe), IPC_CREAT | 0666)) < 0) {
+					    	perror("shmget100");	
+						}
+						if ((pid_pointer = (piduserpipe*)shmat(shm_id, NULL, 0)) == (piduserpipe*) -1) {
+					    	perror("shmat");
+						}
+						(pid_pointer)->userpipev[p_out[1]] = p_out[0]; 
+						shmdt(pid_pointer);
+						kill(pidcross[p_out[1]],SIGUSR2);
+						fileno = open(ss.c_str(), O_WRONLY );
 						dup2(fileno,STDOUT_FILENO);
 						dup2(fileno2,STDIN_FILENO);
 					}else if ( type == 7 ) {
@@ -383,10 +378,11 @@ public:
 					//close(p_in[0]);
 					int status;
 					//cerr << "vsvd" << endl ;
-					waitpid((pid_t)pid, &status, 0);
+					
 					//cerr << "vvvv" << endl;
+					
+					if ( type != 4 && type != 6 ) waitpid((pid_t)pid, &status, 0);
 					if ( type == 3 || type == 7 ) close(fileno);
-					if ( type == 4 || type == 6 ) close(fileno);
 					if ( type == 5 || type == 6 || type == 7 ){
 						close(fileno2);
 					}
