@@ -186,6 +186,16 @@ public:
 		int tmpid = user_vec[user_i].get_id();
 		cout << tmpid << endl;
 		for ( int i = 0 ; i < socketpipecross.size() ; i++ ) {
+			if ( socketpipecross[i][tmpid] == 1 ) {
+				cout << "csdc" << endl;
+				close(socketfdcross[i][tmpid][0]);
+				close(socketfdcross[i][tmpid][1]);
+			}
+			if ( socketpipecross[tmpid][i] == 1 ) {
+				cout << "csdc" << endl;
+				close(socketfdcross[tmpid][i][0]);
+				close(socketfdcross[tmpid][i][1]);
+			}
 			socketpipecross[i][tmpid] = 0 ;
 			socketpipecross[tmpid][i] = 0 ;
 		}	

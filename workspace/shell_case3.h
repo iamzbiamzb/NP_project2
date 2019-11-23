@@ -58,10 +58,15 @@ protected:
 		string filename ; 
 		pipe_list* next ;
 		bool fail_flag;
+		bool done_flag;
+		bool first_flag;
 		array<int,2> in_fd;
 		array<int,2> out_fd;
 		vector<pipe_list*> pre ;
-		pipe_list() : fail_flag(false) {}
+		pipe_list() : fail_flag(false) {
+			done_flag = false;
+			first_flag = false;
+		}
 	};	
 //bilin flag
 	bool who_flag;
@@ -150,7 +155,7 @@ public:
 		usermsg.push_back(tmp);
 	}
 
-	void pipe_without_err( string cmd , vector<string > line , array<int,2> p_in_arr , int* p_out , int flag , int type ) {
+	void pipe_without_err( string cmd , vector<string > line , array<int,2> p_in_arr , array<int,2> p_out_arr , int flag , int type ) {
 		
 		char** cmd_vec = new char*[line.size()+1];
 	    int ii = 0 ;
@@ -181,6 +186,9 @@ public:
 		int p_in[2] ;
 		p_in[0] = p_in_arr[0];
 		p_in[1] = p_in_arr[1];
+		int p_out[2] ;
+		p_out[0] = p_out_arr[0];
+		p_out[1] = p_out_arr[1];
 		int pid ;
 		int fileno , fileno2; 
 		////cerr << "flag: " << flag << endl ;
@@ -430,12 +438,8 @@ public:
 	  					tell_msg += " ";
 	  					tell_msg += (*i)->line[z];
 	  				}
-	  			}else if ( (*i)->fail_flag == true ) {
-	  				;
 	  			}else {
-					int pp[2] ;
-					array<int,2> arr;	
-					arr = run((*i),pp,false);
+					run((*i));
 	  			}
 
 	  			// if ( (*i)->fail_flag == true ) //cout << "true" << endl;
@@ -443,84 +447,146 @@ public:
 	  			
 	      		pipe_vec.erase(i);
 	      	}else {
+	      		run((*i));
 	      		i++;
 	      	}
 	  	}
 	}
 
-	array<int,2> run( pipe_list* it , int* p_out , bool fir ) {
-		//test((*it)->cmd,(*it)->line);
-		int p[2] ;
-		array<int,2> pa;
-		//int stt = pipe(p);
+	// array<int,2> run( pipe_list* it , int* p_out , bool fir ) {
+	// 	//test((*it)->cmd,(*it)->line);
+	// 	int p[2] ;
+	// 	array<int,2> pa;
+	// 	//int stt = pipe(p);
 
-		if( it->pre.size() != 0 ) {
+	// 	if( it->pre.size() != 0 ) {
 
-			for ( auto i : it->pre ) {
-				if ( i == it->pre[0] ) {
-					////cout << it->pre[0] << endl ;
-					pa = run(i,p,true);
-				}else {
-					p[0] = pa[0];
-					p[1] = pa[1];
-					pa = run(i,p,false);
-				}
+	// 		for ( auto i : it->pre ) {
+	// 			if ( i == it->pre[0] ) {
+	// 				////cout << it->pre[0] << endl ;
+	// 				pa = run(i,p,true);
+	// 			}else {
+	// 				p[0] = pa[0];
+	// 				p[1] = pa[1];
+	// 				pa = run(i,p,false);
+	// 			}
+	// 		}
+	// 	}
+	// 	// three condition
+	// 	// 0 = first
+	// 	// 1 = mid
+	// 	// 2 = last
+	// 	// 3 = only one
+	// 	int st ;
+	// 	if ( fir ) {
+	// 		while( (st = pipe(p)) < 0 ) {
+	// 			////cerr << "???" << endl;
+	// 			usleep(1000);
+	// 		}
+	// 	} else {
+	// 		p[0] = p_out[0];
+	// 		p[1] = p_out[1];
+	// 	}
+	// 	int flag = 2 ;
+	// 	if ( it->pre.size() == 0 && it->next == NULL  ) flag = 3 ;
+	// 	else if ( it->next == NULL ) flag = 2 ;
+	// 	else if ( it->pre.size() == 0 ) flag = 0 ;
+	// 	else flag = 1 ;
+
+	// 	if ( it->type == 3 ) filename = it->filename ; 	
+	// 	if ( it->type == 7 ) filename = it->filename ; 
+	// 	if ( it->type == 4 ){
+	// 		p[0] = it->out_fd[0];
+	// 		p[1] = it->out_fd[1];
+	// 	}else if ( it->type == 5 ){
+	// 		pa[0] = it->in_fd[0];
+	// 		pa[1] = it->in_fd[1];
+	// 	}else if ( it->type == 6 ){
+	// 		pa[0] = it->in_fd[0];
+	// 		pa[1] = it->in_fd[1];
+	// 		p[0] = it->out_fd[0];
+	// 		p[1] = it->out_fd[1];
+	// 	}else if ( it->type == 7 ){
+	// 		pa[0] = it->in_fd[0];
+	// 		pa[1] = it->in_fd[1];
+	// 	}else if ( it->type == 8 ){
+	// 		pa[0] = it->in_fd[0];
+	// 		pa[1] = it->in_fd[1];
+	// 	}else if ( it->type == 9 ){
+	// 		pa[0] = it->in_fd[0];
+	// 		pa[1] = it->in_fd[1];
+	// 	}
+
+	// 	// << "type: " << it->type << endl ;
+	// 	////cerr << pa[0] << " " << pa[1] << " " << p[0] << " " << p[1] << endl;
+	// 	pipe_without_err(it->cmd,it->line,pa,p,flag,it->type);
+
+	// 	pa[0] = p[0];
+	// 	pa[1] = p[1];
+	// 	return pa ;
+		
+	// }	
+
+	void run( pipe_list* it ) {
+		
+		if ( it->done_flag == true || it->fail_flag == true ) return;
+
+		it->done_flag = true;
+
+		if ( it->pre.size() != 0 ) {
+			for ( auto i : it->pre ){
+				run(i);
 			}
 		}
-		// three condition
-		// 0 = first
-		// 1 = mid
-		// 2 = last
-		// 3 = only one
-		int st ;
-		if ( fir ) {
-			while( (st = pipe(p)) < 0 ) {
-				////cerr << "???" << endl;
+
+		int p[2];
+		if ( it->next != NULL && it->next->first_flag == false ) {
+			while(pipe(p) < 0) {
 				usleep(1000);
 			}
-		} else {
-			p[0] = p_out[0];
-			p[1] = p_out[1];
+			it->next->first_flag = true;
+			it->next->in_fd[0] = p[0];
+			it->next->in_fd[1] = p[1];
+			it->out_fd[0] = p[0];
+			it->out_fd[1] = p[1];
+		}else if ( it->next != NULL ) {
+			it->out_fd[0] = it->next->in_fd[0];
+			it->out_fd[1] = it->next->in_fd[1];
 		}
-		int flag = 2 ;
+
+		if ( it->type == 3 ) filename = it->filename ; 	
+		if ( it->type == 7 ) filename = it->filename ; 
+		// if ( it->type == 4 ){
+		// 	p[0] = it->out_fd[0];
+		// 	p[1] = it->out_fd[1];
+		// }else if ( it->type == 5 ){
+		// 	pa[0] = it->in_fd[0];
+		// 	pa[1] = it->in_fd[1];
+		// }else if ( it->type == 6 ){
+		// 	pa[0] = it->in_fd[0];
+		// 	pa[1] = it->in_fd[1];
+		// 	p[0] = it->out_fd[0];
+		// 	p[1] = it->out_fd[1];
+		// }else if ( it->type == 7 ){
+		// 	pa[0] = it->in_fd[0];
+		// 	pa[1] = it->in_fd[1];
+		// }else if ( it->type == 8 ){
+		// 	pa[0] = it->in_fd[0];
+		// 	pa[1] = it->in_fd[1];
+		// }else if ( it->type == 9 ){
+		// 	pa[0] = it->in_fd[0];
+		// 	pa[1] = it->in_fd[1];
+		// }
+
+		int flag;
 		if ( it->pre.size() == 0 && it->next == NULL  ) flag = 3 ;
 		else if ( it->next == NULL ) flag = 2 ;
 		else if ( it->pre.size() == 0 ) flag = 0 ;
 		else flag = 1 ;
 
-		if ( it->type == 3 ) filename = it->filename ; 	
-		if ( it->type == 7 ) filename = it->filename ; 
-		if ( it->type == 4 ){
-			p[0] = it->out_fd[0];
-			p[1] = it->out_fd[1];
-		}else if ( it->type == 5 ){
-			pa[0] = it->in_fd[0];
-			pa[1] = it->in_fd[1];
-		}else if ( it->type == 6 ){
-			pa[0] = it->in_fd[0];
-			pa[1] = it->in_fd[1];
-			p[0] = it->out_fd[0];
-			p[1] = it->out_fd[1];
-		}else if ( it->type == 7 ){
-			pa[0] = it->in_fd[0];
-			pa[1] = it->in_fd[1];
-		}else if ( it->type == 8 ){
-			pa[0] = it->in_fd[0];
-			pa[1] = it->in_fd[1];
-		}else if ( it->type == 9 ){
-			pa[0] = it->in_fd[0];
-			pa[1] = it->in_fd[1];
-		}
+		pipe_without_err(it->cmd,it->line,it->in_fd,it->out_fd,flag,it->type);		
+	}
 
-		// << "type: " << it->type << endl ;
-		////cerr << pa[0] << " " << pa[1] << " " << p[0] << " " << p[1] << endl;
-		pipe_without_err(it->cmd,it->line,pa,p,flag,it->type);
-
-		pa[0] = p[0];
-		pa[1] = p[1];
-		return pa ;
-		
-	}	
 
 	int input_command(int fd, char* command) {
 		int len = read(fd, command, BUFSIZE - 1);
@@ -571,11 +637,34 @@ public:
 		for ( auto k = pipe_vec.begin() ; k != pipe_vec.end() ; ){
 			(*k)->cnt = (*k)->cnt -1 ;
 			if ( (*k)->cnt == 0 ) {
+				tmp_pipe_list->in_fd = (*k)->next->in_fd;
 				(*k)->next = tmp_pipe_list ;
 				tmp_pipe_list->pre.push_back((*k));
 				pipe_vec.erase(k);
 			}else {
 				k++;
+			}
+		}
+
+		if ( fail_flag == true ) {
+			delete tmp_pipe_list;
+			return;
+		}
+
+		if ( type == 0 || type == 1 || type == 8 || type == 9 ){
+			bool tt = false;
+			for ( auto k = pipe_vec.begin() ; k != pipe_vec.end() ; ){
+				if ( (*k)->cnt == pipe_cnt ) {
+					tt = true;
+					tmp_pipe_list->next = (*k)->next;
+					break;
+				}
+				k++;
+			}
+
+			if ( tt == false ) {
+				pipe_list* tp = new pipe_list;
+				tmp_pipe_list->next = tp;
 			}
 		}
 		pipe_vec.push_back(tmp_pipe_list);
@@ -866,6 +955,7 @@ public:
 	      				i++;
 	      				
       				}else {
+      					parser_helper(8,pipe_cnt,line,cmd,"1",ii,oo,true);
       					if ( idcntcross[in_cnt] == 0 ) makeusermsg(in_cnt,in_cnt,0,""); //userid
       					else if ( socketpipecross[in_cnt][user_i] == 0 ) makeusermsg(in_cnt,user_i,4,""); //dont exist
       					
@@ -901,6 +991,7 @@ public:
       					i++;
       					
       				}else {
+      					parser_helper(9,pipe_cnt,line,cmd,"1",ii,oo,true);
       					if ( idcntcross[in_cnt] == 0 ) makeusermsg(in_cnt,in_cnt,0,""); //userid
       					else if ( socketpipecross[in_cnt][user_i] == 0 ) makeusermsg(in_cnt,user_i,4,""); //dont exist
       					
